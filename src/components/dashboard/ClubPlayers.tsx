@@ -3,7 +3,8 @@ import { User } from '@/types'
 import Toast from '../ui/Toast'
 
 interface ClubPlayersProps {
-  user: User
+  user: any
+  onAddPlayer?: (...args: any[]) => void
 }
 
 interface ClubPlayer {
@@ -17,7 +18,7 @@ interface ClubPlayer {
   balance?: number
 }
 
-export default function ClubPlayers({ user }: ClubPlayersProps) {
+export default function ClubPlayers({ user, onAddPlayer }: ClubPlayersProps) {
   const [players, setPlayers] = useState<ClubPlayer[]>([])
   const [search, setSearch] = useState('')
   const [loading, setLoading] = useState(false)
@@ -142,7 +143,10 @@ export default function ClubPlayers({ user }: ClubPlayersProps) {
         />
         <button
           className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md text-sm font-medium"
-          onClick={() => setShowForm(v => !v)}
+          onClick={e => {
+            setShowForm(v => !v)
+            if (onAddPlayer) onAddPlayer(e)
+          }}
         >
           {showForm ? 'Cancelar' : 'Agregar jugador'}
         </button>

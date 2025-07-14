@@ -174,13 +174,13 @@ export default function TournamentList({ tournaments, onTournamentSelect, onRefr
                   <div className="flex space-x-2 ml-6">
                     <button
                       onClick={() => onTournamentSelect(tournament.id)}
-                      className="inline-flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg shadow-md hover:shadow-lg transition-all duration-200 hover:scale-105"
+                      className="ver-detalles-btn flex items-center space-x-2 px-4 py-2 bg-white border border-gray-300 rounded-lg shadow hover:bg-gray-50 text-gray-700 font-semibold transition-all duration-200"
                     >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                       </svg>
-                      <span className="text-sm font-medium">Ver Detalles</span>
+                      <span>Ver Detalles</span>
                     </button>
                     {onEditTournament && tournament.status === 'REGISTERING' && tournament.players?.length === 0 && (
                       <button

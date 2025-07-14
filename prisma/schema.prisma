@@ -24,6 +24,7 @@ model User {
   role      UserRole @default(ORGANIZER)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  hasCompletedTutorial Boolean @default(false)
 
   // Relaciones
   tournaments Tournament[] @relation("TournamentOrganizer")

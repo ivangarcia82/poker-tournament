@@ -8,6 +8,7 @@ import { verifyToken } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import ClubOnboarding from '@/components/onboarding/ClubOnboarding'
 import { useEffect, useState } from 'react'
+import { TutorialProvider } from '@/components/onboarding/TutorialContext'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -74,7 +75,9 @@ export default function RootLayout({
   return (
     <html lang="es">
       <body className={inter.className}>
-        {children}
+        <TutorialProvider>
+          {children}
+        </TutorialProvider>
       </body>
     </html>
   )
