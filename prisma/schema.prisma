@@ -1,0 +1,293 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+  // Configuración del pool de conexiones
+  relationMode = "prisma"
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String
+  password  String
+  role      UserRole @default(ORGANIZER)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relaciones
+  tournaments Tournament[] @relation("TournamentOrganizer")
+  players     Player[]
+  transactions Transaction[]
+  auditLogs   AuditLog[]
+  clubId      String?
+  club        Club?     @relation(fields: [clubId], references: [id])
+
+  @@map("users")
+}
+
+model Tournament {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  buyIn       Float
+  doubleBuyIn Boolean  @default(false) // si permite buy-in doble
+  doubleBuyInPrice Float? // precio del buy-in doble
+  doubleBuyInChips Int?   // fichas del buy-in doble
+  addOn       Float?
+  addOnChips  Int?    // fichas del add-on
+  rake        Float
+  maxPlayers  Int
+  minPlayers  Int
+  startTime   DateTime
+  endTime     DateTime?
+  status      TournamentStatus @default(REGISTERING)
+  initialStack Int     @default(5000) // fichas que recibe cada jugador al comenzar
+  rebuy       Float?
+  rebuyChips  Int?     // fichas de la recompra
+  doubleRebuy Boolean  @default(false)
+  doubleRebuyPrice Float? // precio de la recompra doble
+  doubleRebuyChips Int?   // fichas de la recompra doble
+  pauseLevel  Int     @default(0)
+  pausedAt    DateTime?
+  pausedTimeRemaining Int? // segundos restantes cuando se pausó
+  blindStructure BlindStructure[]
+  prizes      Prize[]
+  players     Player[]
+  transactions Transaction[]
+  bonuses     Bonus[]
+  organizerId String
+  organizer   User     @relation("TournamentOrganizer", fields: [organizerId], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  playerPayments PlayerPayment[]
+  snapshots   TournamentSnapshot[]
+
+  @@map("tournaments")
+}
+
+model TournamentSnapshot {
+  id          String   @id @default(cuid())
+  tournamentId String
+  tournament  Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  
+  // Estado del torneo
+  status      String
+  currentLevel Int?
+  timeRemaining Int?
+  isPaused    Boolean @default(false)
+  pausedAt    DateTime?
+  pausedTimeRemaining Int?
+  
+  // Estado de los jugadores
+  players     Json     // Array de jugadores con su estado actual
+  
+  // Estado de las transacciones
+  transactions Json?   // Array de transacciones hasta ese momento
+  
+  // Estado de los pagos
+  payments    Json?    // Array de pagos hasta ese momento
+  
+  // Estado de los bonos
+  bonuses     Json?    // Array de bonos hasta ese momento
+  
+  // Metadata
+  description String?  // Descripción opcional del snapshot
+  isAutomatic Boolean  @default(true) // Si fue creado automáticamente o manualmente
+  
+  @@index([tournamentId, createdAt])
+}
+
+model Bonus {
+  id          String   @id @default(cuid())
+  name        String
+  chips       Int
+  price       Float    @default(0)
+  availableInBuyIn Boolean @default(true) // disponible en compra inicial
+  availableInRebuy Boolean @default(false) // disponible en recompra
+  availableInAddOn Boolean @default(false) // disponible en add-on
+  description String?  // descripción opcional del bono
+  tournamentId String
+  tournament  Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  playerBonuses PlayerBonus[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("bonuses")
+}
+
+model PlayerBonus {
+  id        String   @id @default(cuid())
+  playerId  String
+  player    Player   @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  bonusId   String
+  bonus     Bonus    @relation(fields: [bonusId], references: [id], onDelete: Cascade)
+  appliedAt DateTime @default(now())
+
+  @@unique([playerId, bonusId])
+  @@map("player_bonuses")
+}
+
+model BlindStructure {
+  id           String   @id @default(cuid())
+  level        Int
+  smallBlind   Int
+  bigBlind     Int
+  ante         Int      @default(0)
+  duration     Int      // en minutos
+  isPause      Boolean  @default(false) // indica si es un nivel de pausa
+  tournamentId String
+  tournament   Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("blind_structures")
+}
+
+model Player {
+  id           String   @id @default(cuid())
+  name         String
+  email        String?
+  phone        String?
+  chips        Int      @default(0)
+  position     Int?
+  isEliminated Boolean  @default(false)
+  eliminatedAt DateTime?
+  addOns       Int      @default(0)
+  hasDoubleRebuyAccess Boolean @default(false) // indica si el jugador tiene acceso a recompras dobles
+  tournamentId String
+  tournament   Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  userId       String?
+  user         User?    @relation(fields: [userId], references: [id])
+  transactions Transaction[]
+  playerBonuses PlayerBonus[]
+  playerPayments PlayerPayment[]
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  clubPlayerId String?
+  clubPlayer   ClubPlayer? @relation(fields: [clubPlayerId], references: [id])
+
+  @@map("players")
+}
+
+model Prize {
+  id           String   @id @default(cuid())
+  position     Int
+  amount       Float
+  percentage   Float
+  tournamentId String
+  tournament   Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("prizes")
+}
+
+model Transaction {
+  id           String   @id @default(cuid())
+  type         TransactionType
+  amount       Float
+  description  String?
+  tournamentId String
+  tournament   Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  playerId     String?
+  player       Player?   @relation(fields: [playerId], references: [id])
+  userId       String?
+  user         User?     @relation(fields: [userId], references: [id])
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@map("transactions")
+}
+
+model AuditLog {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id])
+  action       String
+  details      String?
+  tournamentId String?
+  playerId     String?
+  createdAt    DateTime @default(now())
+
+  @@map("audit_logs")
+}
+
+model Club {
+  id           String   @id @default(cuid())
+  name         String
+  logoUrl      String?  @db.LongText
+  colorPrimary String? @default("#2563eb")
+  colorSecondary String? @default("#f3f4f6")
+  colorAccent  String? @default("#22c55e")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  users        User[]   // relación inversa
+  clubPlayers  ClubPlayer[]
+  // Relaciones futuras: usuarios, torneos, etc.
+}
+
+model ClubPlayer {
+  id        String   @id @default(cuid())
+  name      String
+  email     String?  @unique
+  phone     String?
+  notes     String?
+  players   Player[]
+  clubId    String
+  club      Club     @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model PlayerPayment {
+  id           String   @id @default(cuid())
+  playerId     String
+  player       Player   @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  tournamentId String
+  tournament   Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  amount       Float
+  method       String   // efectivo, transferencia, etc.
+  reference    String?
+  paidAt       DateTime @default(now())
+  notes        String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+enum UserRole {
+  ADMIN
+  ORGANIZER
+  STAFF
+  USER
+}
+
+enum TournamentStatus {
+  REGISTERING
+  STARTING
+  RUNNING
+  PAUSED
+  FINISHED
+  CANCELLED
+}
+
+enum TransactionType {
+  BUY_IN
+  ADD_ON
+  REBUY
+  PRIZE
+  RAKE
+  REFUND
+  OTHER
+}

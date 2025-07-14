@@ -1,0 +1,6 @@
+-- AlterTable
+ALTER TABLE `tournaments` ADD COLUMN `addOnChips` INTEGER NULL,
+    ADD COLUMN `buyInChips` INTEGER NOT NULL DEFAULT 5000,
+    ADD COLUMN `doubleBuyIn` BOOLEAN NOT NULL DEFAULT false,
+    ADD COLUMN `doubleBuyInChips` INTEGER NULL,
+    ADD COLUMN `doubleBuyInPrice` DOUBLE NULL;
