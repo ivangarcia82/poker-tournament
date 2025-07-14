@@ -3,7 +3,7 @@ const { parse } = require('url')
 const next = require('next')
 
 const dev = process.env.NODE_ENV !== 'production'
-const hostname = 'localhost'
+const hostname = process.env.NODE_ENV === 'production' ? '0.0.0.0' : 'localhost'
 const port = process.env.PORT || 3000
 
 // Preparar la aplicación Next.js
@@ -27,7 +27,7 @@ app.prepare().then(() => {
   const { Server } = require('socket.io')
   const io = new Server(server, {
     cors: {
-      origin: process.env.NODE_ENV === 'production' ? false : "http://localhost:3000",
+      origin: process.env.NODE_ENV === 'production' ? process.env.NEXT_PUBLIC_APP_URL : "http://localhost:3000",
       methods: ["GET", "POST"]
     }
   })
