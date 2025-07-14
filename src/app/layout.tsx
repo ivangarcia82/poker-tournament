@@ -22,6 +22,12 @@ export default function RootLayout({
   const [userId, setUserId] = useState<string>('')
 
   useEffect(() => {
+    // No verificar autenticación si estamos en la página de login
+    if (window.location.pathname === '/login') {
+      setIsLoading(false)
+      return
+    }
+
     async function checkAuth() {
       try {
         const response = await fetch('/api/auth/me')
